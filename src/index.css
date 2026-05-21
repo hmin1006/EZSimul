@@ -1,0 +1,793 @@
+/* ===================================================================
+   Krebs Cycle — Interactive Reference
+   Modern editorial / scientific data-viz aesthetic
+   =================================================================== */
+
+:root {
+  /* —— Surface ————————————————————————————————————————————— */
+  --bg:           #f4f1ea;   /* warm off-white, never stark */
+  --bg-deep:      #ebe6dc;   /* slightly deeper for the stage frame */
+  --surface:      #ffffff;   /* elevated cards, the molecule plate */
+  --border:       #e2ddd1;
+  --border-strong:#cdc6b4;
+  --rule:         #d8d3c4;
+
+  /* —— Ink ————————————————————————————————————————————————— */
+  --text:         #161616;
+  --text-2:       #4a4a4a;
+  --text-muted:   #767063;
+  --text-faint:   #a8a294;
+
+  /* —— Accents — used sparingly, with intent ——————————————————— */
+  --accent:       #0a8866;   /* deep emerald — life sciences, the active state */
+  --accent-soft:  #d5ece1;
+  --accent-line:  #b6dac9;
+
+  --warn:         #c44539;   /* signal red — outputs, leaving group, oxygen */
+  --warn-soft:    #f4dcd6;
+  --warn-line:    #ecb8af;
+
+  --amber:        #b88420;   /* sulfur, notes */
+  --amber-soft:   #f0e3c5;
+
+  --indigo:       #2a4a8c;
+
+  /* —— Typography ——————————————————————————————————————————— */
+  --font-sans:    'Bricolage Grotesque', ui-sans-serif, system-ui, sans-serif;
+  --font-mono:    'JetBrains Mono', ui-monospace, 'Cascadia Mono', Menlo, monospace;
+
+  /* —— Geometry ———————————————————————————————————————————— */
+  --r-sm: 4px;
+  --r:    8px;
+  --r-lg: 14px;
+  --shadow-sm: 0 1px 2px rgba(22, 22, 22, 0.04);
+  --shadow:    0 2px 6px rgba(22, 22, 22, 0.04), 0 12px 32px -16px rgba(22, 22, 22, 0.10);
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-feature-settings: 'ss01', 'cv11';
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: -0.005em;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background:
+    radial-gradient(ellipse 60% 50% at 12% 6%, rgba(10, 136, 102, 0.05), transparent 60%),
+    radial-gradient(ellipse 50% 40% at 92% 100%, rgba(196, 69, 57, 0.04), transparent 60%),
+    var(--bg);
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: inherit;
+  letter-spacing: inherit;
+}
+
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+::selection { background: var(--accent); color: #fff; }
+
+/* ===================================================================
+   LAYOUT
+   =================================================================== */
+
+.app {
+  position: relative;
+  height: 100vh;
+  width: 100vw;
+  display: grid;
+  grid-template-columns: 1fr 440px;
+  grid-template-rows: auto auto 1fr auto;
+  grid-template-areas:
+    "header   header"
+    "pills    pills"
+    "stage    panel"
+    "controls controls";
+}
+
+.app > * {
+  animation: pageReveal 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+}
+.app > .app-header     { animation-delay:   0ms; }
+.app > .step-pills-row { animation-delay: 100ms; }
+.app > .stage          { animation-delay: 180ms; }
+.app > .info-panel     { animation-delay: 280ms; }
+.app > .controls-bar   { animation-delay: 360ms; }
+
+@keyframes pageReveal {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ===================================================================
+   HEADER
+   =================================================================== */
+
+.app-header {
+  grid-area: header;
+  padding: 22px 32px 18px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 32px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  z-index: 10;
+}
+
+.masthead { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.eyebrow .dot {
+  width: 7px;
+  height: 7px;
+  background: var(--accent);
+  border-radius: 50%;
+}
+
+.app-title {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 38px;
+  line-height: 1;
+  letter-spacing: -0.035em;
+  font-variation-settings: 'wdth' 90, 'opsz' 96;
+  color: var(--text);
+  margin: 4px 0 0;
+}
+
+.app-title .accent {
+  color: var(--accent);
+}
+
+.subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+  letter-spacing: -0.005em;
+  margin-top: 4px;
+  max-width: 48ch;
+}
+
+.stage-counter {
+  text-align: right;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.stage-counter-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.stage-counter-value {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 32px;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  font-variation-settings: 'wdth' 85, 'opsz' 96;
+  color: var(--text);
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.stage-counter-value .of { color: var(--text-faint); margin: 0 2px; font-weight: 400; }
+.stage-counter-value .total { color: var(--text-faint); font-weight: 400; }
+
+/* ===================================================================
+   STEP PILLS
+   =================================================================== */
+
+.step-pills-row {
+  grid-area: pills;
+  padding: 14px 32px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.step-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px 6px 8px;
+  border-radius: 999px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  letter-spacing: -0.005em;
+  transition: all 0.18s cubic-bezier(0.2, 0.7, 0.2, 1);
+  white-space: nowrap;
+}
+
+.step-pill .pill-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--bg-deep);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-2);
+  letter-spacing: 0;
+}
+
+.step-pill:hover {
+  color: var(--text);
+  background: var(--bg-deep);
+}
+
+.step-pill.active {
+  color: var(--surface);
+  background: var(--text);
+  font-weight: 500;
+}
+.step-pill.active .pill-num {
+  background: rgba(255, 255, 255, 0.15);
+  color: var(--surface);
+}
+
+.step-sep {
+  display: none;  /* clean — no separator characters between pills */
+}
+
+/* ===================================================================
+   STAGE — molecule plate
+   =================================================================== */
+
+.stage {
+  grid-area: stage;
+  position: relative;
+  min-height: 0;
+  min-width: 0;
+  padding: 24px 32px 20px;
+}
+
+.stage-frame {
+  position: absolute;
+  inset: 24px 32px 20px 32px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+/* tiny corner crop marks — geometric, modern */
+.stage-frame::before,
+.stage-frame::after {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid var(--accent);
+  opacity: 0.4;
+}
+.stage-frame::before {
+  top: 12px; left: 12px;
+  border-right: none;
+  border-bottom: none;
+}
+.stage-frame::after {
+  bottom: 12px; right: 12px;
+  border-left: none;
+  border-top: none;
+}
+
+.stage canvas { display: block; position: relative; z-index: 1; }
+
+.stage-caption {
+  position: absolute;
+  bottom: 36px;
+  left: 0; right: 0;
+  text-align: center;
+  z-index: 5;
+  pointer-events: none;
+  animation: captionFade 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+}
+
+.stage-caption span:first-child {
+  display: inline-block;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 22px;
+  letter-spacing: -0.02em;
+  font-variation-settings: 'wdth' 95, 'opsz' 36;
+  color: var(--text);
+  padding: 4px 14px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.stage-caption .formula {
+  display: block;
+  margin-top: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+}
+
+@keyframes captionFade {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ===================================================================
+   CYCLE OVERVIEW — minimal modern emblem
+   =================================================================== */
+
+.cycle-overview {
+  position: absolute;
+  top: 40px;
+  left: 52px;
+  width: 168px;
+  height: 168px;
+  z-index: 5;
+  pointer-events: none;
+}
+.cycle-overview svg { pointer-events: auto; overflow: visible; }
+
+.cycle-dot { cursor: pointer; transition: all 0.25s cubic-bezier(0.2, 0.7, 0.2, 1); }
+
+.cycle-dot-label {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  fill: var(--text-muted);
+  user-select: none;
+  pointer-events: none;
+  transition: fill 0.2s ease;
+}
+.cycle-dot-label.active { fill: var(--accent); font-weight: 600; }
+
+/* ===================================================================
+   CONTROLS — slider + arrow buttons
+   =================================================================== */
+
+.controls-bar {
+  grid-area: controls;
+  padding: 18px 40px 22px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  background: var(--bg);
+}
+
+.arrow-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text);
+  border-radius: var(--r);
+  flex-shrink: 0;
+  transition: all 0.18s cubic-bezier(0.2, 0.7, 0.2, 1);
+  box-shadow: var(--shadow-sm);
+}
+
+.arrow-btn:hover {
+  background: var(--text);
+  color: var(--surface);
+  border-color: var(--text);
+  transform: translateY(-1px);
+}
+.arrow-btn:active { transform: translateY(0); }
+
+.slider-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: 0 4px;
+}
+
+.slider-ticks {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--text-faint);
+  letter-spacing: 0;
+}
+
+.slider-ticks .tick.active { color: var(--accent); font-weight: 600; }
+
+.slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 3px;
+  background:
+    linear-gradient(to right,
+      var(--accent) 0%,
+      var(--accent) var(--pct, 0%),
+      var(--border-strong) var(--pct, 0%),
+      var(--border-strong) 100%);
+  border-radius: 999px;
+  outline: none;
+  margin: 4px 0;
+  cursor: pointer;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 2px solid var(--accent);
+  cursor: pointer;
+  transition: transform 0.18s ease;
+  box-shadow: var(--shadow-sm);
+}
+.slider::-webkit-slider-thumb:hover { transform: scale(1.15); }
+.slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 2px solid var(--accent);
+  cursor: pointer;
+}
+
+/* ===================================================================
+   INFO PANEL
+   =================================================================== */
+
+.info-panel {
+  grid-area: panel;
+  border-left: 1px solid var(--border);
+  background: var(--bg);
+  overflow-y: auto;
+  padding: 28px 28px 24px;
+  position: relative;
+}
+
+.panel-section { margin-bottom: 22px; }
+.panel-section:last-child { margin-bottom: 0; }
+
+.panel-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.panel-eyebrow::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  background: var(--accent);
+  border-radius: 50%;
+}
+
+.panel-molecule-name {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 32px;
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+  font-variation-settings: 'wdth' 92, 'opsz' 96;
+  color: var(--text);
+  margin: 0 0 8px;
+}
+
+.panel-formula {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-2);
+  letter-spacing: 0.02em;
+  background: var(--bg-deep);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 4px 8px;
+  display: inline-block;
+}
+
+.panel-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 18px 0;
+}
+
+.panel-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.panel-enzyme {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 18px;
+  letter-spacing: -0.02em;
+  color: var(--accent);
+  line-height: 1.2;
+}
+
+.panel-reaction {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.panel-description {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-2);
+  letter-spacing: -0.005em;
+}
+
+/* —— TAGS — pill style —————————————————————————————————————— */
+
+.tag-group { display: flex; flex-wrap: wrap; gap: 5px; }
+
+.tag {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  font-weight: 500;
+  padding: 4px 9px;
+  letter-spacing: 0;
+  border: 1px solid;
+  border-radius: 999px;
+  background: var(--surface);
+  white-space: nowrap;
+  transition: transform 0.15s ease;
+}
+
+.tag:hover { transform: translateY(-1px); }
+
+.tag.in {
+  color: var(--accent);
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+}
+
+.tag.out {
+  color: var(--warn);
+  border-color: var(--warn-line);
+  background: var(--warn-soft);
+}
+
+.tag.note {
+  color: var(--amber);
+  border-color: rgba(184, 132, 32, 0.35);
+  background: var(--amber-soft);
+}
+
+/* —— ENERGY —————————————————————————————————————————————— */
+
+.energy-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.energy-value {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 20px;
+  letter-spacing: -0.025em;
+  color: var(--text);
+  font-variation-settings: 'wdth' 88;
+}
+
+.energy-value.favorable { color: var(--accent); }
+.energy-value.unfavorable { color: var(--warn); }
+
+.energy-note {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 4px;
+  line-height: 1.45;
+}
+
+/* —— CARBON COUNT ——————————————————————————————————————————— */
+
+.carbon-count {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--text);
+}
+
+.c-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 9px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--text);
+  border-radius: var(--r-sm);
+}
+
+.c-arrow { color: var(--text-faint); }
+
+.c-badge.lost {
+  color: var(--warn);
+  border-color: var(--warn-line);
+  background: var(--warn-soft);
+}
+
+/* ===================================================================
+   TOOLTIP
+   =================================================================== */
+
+.molecule-tooltip {
+  position: fixed;
+  pointer-events: none;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  padding: 10px 13px;
+  font-size: 12.5px;
+  z-index: 100;
+  max-width: 240px;
+  border-radius: var(--r);
+  box-shadow: var(--shadow);
+  transform: translate(14px, 14px);
+}
+
+.tooltip-title {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text);
+  margin-bottom: 4px;
+  letter-spacing: -0.01em;
+}
+
+.tooltip-role {
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+/* ===================================================================
+   FLOATING REACTION LABELS
+   =================================================================== */
+
+.reaction-float {
+  position: absolute;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  pointer-events: none;
+  z-index: 4;
+  padding: 5px 11px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  box-shadow: var(--shadow);
+  animation: floatLabel 1.7s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+}
+.reaction-float.in  { color: var(--accent); border-color: var(--accent-line); }
+.reaction-float.out { color: var(--warn); border-color: var(--warn-line); }
+
+@keyframes floatLabel {
+  0%   { opacity: 0; transform: translateY(0) scale(0.92); }
+  12%  { opacity: 1; transform: translateY(-8px) scale(1); }
+  80%  { opacity: 1; transform: translateY(-38px) scale(1); }
+  100% { opacity: 0; transform: translateY(-64px) scale(0.96); }
+}
+
+/* ===================================================================
+   RESPONSIVE
+   =================================================================== */
+
+@media (max-width: 900px) {
+  .app {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "header"
+      "pills"
+      "stage"
+      "panel"
+      "controls";
+    grid-template-rows: auto auto 1fr auto auto;
+  }
+  .info-panel {
+    border-left: none;
+    border-top: 1px solid var(--border);
+    max-height: 38vh;
+    padding: 18px 20px;
+  }
+  .app-title { font-size: 28px; }
+  .app-header, .step-pills-row, .stage, .controls-bar { padding-left: 18px; padding-right: 18px; }
+  .stage-frame { inset: 14px 18px 12px 18px; }
+  .cycle-overview { width: 110px; height: 110px; top: 16px; left: 28px; }
+}
+
+/* ===================================================================
+   SCROLLBAR
+   =================================================================== */
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border: 2px solid var(--bg);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
