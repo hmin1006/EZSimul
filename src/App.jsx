@@ -4,14 +4,18 @@ import InfoPanel from './components/InfoPanel.jsx';
 import CycleOverview from './components/CycleOverview.jsx';
 import StepControls, { StepPills } from './components/StepControls.jsx';
 import FunctionalGroupTooltip from './components/FunctionalGroupTooltip.jsx';
-import { steps } from './data/steps.js';
+import { pathways, pathwayOrder } from './data/pathways.js';
 
 export default function App() {
+  const [pathwayId, setPathwayId] = useState(pathwayOrder[0]);
   const [stepIndex, setStepIndex] = useState(0);
   const [prevIndex, setPrevIndex] = useState(0);
   const [hoverGroup, setHoverGroup] = useState(null);
   const [floatingLabels, setFloatingLabels] = useState([]);
   const floatIdRef = useRef(0);
+
+  const pathway = pathways[pathwayId];
+  const { steps } = pathway;
 
   const handleStepChange = useCallback(
     (next) => {
@@ -49,8 +53,18 @@ export default function App() {
         setFloatingLabels((prev) => prev.filter((l) => !newLabels.some((n) => n.id === l.id)));
       }, 4200);
     },
-    [stepIndex]
+    [stepIndex, steps]
   );
+
+  // Switching pathway resets to its first step and clears any in-flight labels.
+  const handlePathwayChange = useCallback((id) => {
+    if (id === pathwayId) return;
+    setPathwayId(id);
+    setStepIndex(0);
+    setPrevIndex(0);
+    setHoverGroup(null);
+    setFloatingLabels([]);
+  }, [pathwayId]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -63,7 +77,7 @@ export default function App() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [stepIndex, handleStepChange]);
+  }, [stepIndex, steps, handleStepChange]);
 
   const currentStep = steps[stepIndex];
 
@@ -73,38 +87,56 @@ export default function App() {
         <div className="masthead">
           <div className="eyebrow">
             <span className="dot" />
-            Tricarboxylic Acid Cycle
+            {pathway.eyebrow}
           </div>
-          <h1 className="app-title">
-            Krebs <span className="accent">Cycle</span>
+          <h1 className="app-title" key={pathwayId}>
+            {pathway.title}<span className="accent">{pathway.titleAccent}</span>
           </h1>
-          <div className="subtitle">
-            An interactive walkthrough of the eight enzymatic transformations.
-          </div>
+          <div className="subtitle">{pathway.subtitle}</div>
         </div>
-        <div className="stage-counter">
-          <span className="stage-counter-label">Stage</span>
-          <div className="stage-counter-value">
-            <span>{stepIndex + 1}</span>
-            <span className="of">/</span>
-            <span className="total">{steps.length}</span>
+
+        <div className="header-right">
+          <div className="pathway-switch" role="tablist" aria-label="Pathway">
+            {pathwayOrder.map((id) => (
+              <button
+                key={id}
+                role="tab"
+                aria-selected={id === pathwayId}
+                className={`pathway-tab${id === pathwayId ? ' active' : ''}`}
+                onClick={() => handlePathwayChange(id)}
+              >
+                {pathways[id].label}
+              </button>
+            ))}
+          </div>
+          <div className="stage-counter">
+            <span className="stage-counter-label">Stage</span>
+            <div className="stage-counter-value">
+              <span>{stepIndex + 1}</span>
+              <span className="of">/</span>
+              <span className="total">{steps.length}</span>
+            </div>
           </div>
         </div>
       </header>
 
-      <StepPills stepIndex={stepIndex} onStepChange={handleStepChange} />
+      <StepPills steps={steps} stepIndex={stepIndex} onStepChange={handleStepChange} />
 
       <div className="stage">
         <div className="stage-frame" />
         <MoleculeViewer
+          key={pathwayId}
+          molecules={pathway.molecules}
+          highlights={pathway.highlights}
+          cameraZ={pathway.cameraZ}
           prevIndex={prevIndex}
           stepIndex={stepIndex}
           onTransitionEnd={() => setPrevIndex(stepIndex)}
           onHoverGroup={setHoverGroup}
         />
-        <CycleOverview stepIndex={stepIndex} onSelect={handleStepChange} />
+        <CycleOverview pathway={pathway} stepIndex={stepIndex} onSelect={handleStepChange} />
 
-        <div className="stage-caption" key={stepIndex}>
+        <div className="stage-caption" key={`${pathwayId}-${stepIndex}`}>
           <span>{currentStep.name}</span>
           <span className="formula">{currentStep.formula}</span>
         </div>
@@ -125,9 +157,9 @@ export default function App() {
         ))}
       </div>
 
-      <InfoPanel stepIndex={stepIndex} />
+      <InfoPanel steps={steps} stepIndex={stepIndex} />
 
-      <StepControls stepIndex={stepIndex} onStepChange={handleStepChange} />
+      <StepControls steps={steps} stepIndex={stepIndex} onStepChange={handleStepChange} />
 
       <FunctionalGroupTooltip hover={hoverGroup} />
     </div>

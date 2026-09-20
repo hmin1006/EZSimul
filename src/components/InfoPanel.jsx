@@ -1,14 +1,18 @@
 import React from 'react';
-import { steps } from '../data/steps.js';
 
-export default function InfoPanel({ stepIndex }) {
+export default function InfoPanel({ steps, stepIndex }) {
   const step = steps[stepIndex];
   if (!step) return null;
 
   const carbonsFrom = step.carbonsFrom;
   const carbonsTo = step.carbons;
-  const lostCarbon = carbonsFrom != null && carbonsTo < carbonsFrom;
-  const gainedCarbon = carbonsFrom != null && carbonsTo > carbonsFrom;
+  const multiplier = step.multiplier ?? 1;
+  // A "split" step (aldolase) divides one molecule into several — the carbon
+  // count goes 6C → 3C ×2 rather than being lost or gained.
+  const isSplit = carbonsFrom != null && multiplier > 1 && carbonsTo * multiplier === carbonsFrom;
+  const lostCarbon = !isSplit && carbonsFrom != null && carbonsTo < carbonsFrom;
+  const gainedCarbon = !isSplit && carbonsFrom != null && carbonsTo > carbonsFrom;
+  const toLabel = multiplier > 1 ? `${carbonsTo}C ×${multiplier}` : `${carbonsTo}C`;
 
   return (
     <aside className="info-panel" key={stepIndex}>
@@ -84,7 +88,12 @@ export default function InfoPanel({ stepIndex }) {
             <>
               <span className="c-badge">{carbonsFrom}C</span>
               <span className="c-arrow">→</span>
-              <span className={`c-badge ${lostCarbon ? 'lost' : ''}`}>{carbonsTo}C</span>
+              <span className={`c-badge ${lostCarbon ? 'lost' : ''}`}>{toLabel}</span>
+              {isSplit && (
+                <span style={{ color: 'var(--accent)', fontSize: 13, fontWeight: 500 }}>
+                  cleaved in two
+                </span>
+              )}
               {lostCarbon && (
                 <span style={{ color: 'var(--warn)', fontSize: 13, fontWeight: 500 }}>
                   − CO₂
@@ -97,7 +106,7 @@ export default function InfoPanel({ stepIndex }) {
               )}
             </>
           ) : (
-            <span className="c-badge">{carbonsTo}C</span>
+            <span className="c-badge">{toLabel}</span>
           )}
         </div>
       </div>

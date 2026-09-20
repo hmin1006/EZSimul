@@ -1,7 +1,6 @@
 import React from 'react';
-import { steps } from '../data/steps.js';
 
-export default function StepControls({ stepIndex, onStepChange }) {
+export default function StepControls({ steps, stepIndex, onStepChange }) {
   const max = steps.length - 1;
   const pct = (stepIndex / max) * 100;
 
@@ -49,7 +48,7 @@ export default function StepControls({ stepIndex, onStepChange }) {
   );
 }
 
-export function StepPills({ stepIndex, onStepChange }) {
+export function StepPills({ steps, stepIndex, onStepChange }) {
   return (
     <nav className="step-pills-row" aria-label="Cycle stages">
       {steps.map((s, i) => (

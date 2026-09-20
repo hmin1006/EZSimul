@@ -2,8 +2,6 @@ import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Html } from '@react-three/drei';
 import * as THREE from 'three';
-import { molecules } from '../data/molecules.js';
-import { HIGHLIGHTS } from '../data/highlights.js';
 import { buildTween, easeInOut, lerpVec } from '../utils/transitionAnimator.js';
 
 // Modern editorial palette — matches index.css.
@@ -11,6 +9,7 @@ const COLORS = {
   C: '#161616',     // near-black, the dominant ink color
   O: '#c44539',     // signal red
   S: '#b88420',     // amber
+  P: '#d9731a',     // phosphorus — CPK-style orange
   H: '#888888',     // soft grey
   bond: '#1f1f1f',
   bondHighlight: '#0a8866',
@@ -20,6 +19,7 @@ const COLORS = {
 const LABEL_COLORS = {
   O: '#c44539',
   S: '#b88420',
+  P: '#d9731a',
   H: '#5a5a5a',
 };
 
@@ -30,6 +30,7 @@ const ATOM_RADIUS = {
   C: 0.08,
   O: 0.28,
   S: 0.32,
+  P: 0.32,
   H: 0.14,
 };
 
@@ -37,6 +38,7 @@ const ATOM_RADIUS = {
 const LABEL_FONT = {
   O: 28,
   S: 28,
+  P: 28,
   H: 22,
 };
 
@@ -45,7 +47,16 @@ const LABEL_FONT = {
 const LABEL_OFFSET = {
   O: [0, 0],
   S: [0, 0],
+  P: [0, 0],
   H: [0, 0],
+};
+
+// Charge annotation appended to the element symbol (e.g. "O⁻").
+const chargeSuffix = (atom) => {
+  if (!atom.charge) return '';
+  if (atom.charge === -1) return '⁻';
+  if (atom.charge === 1) return '⁺';
+  return `${Math.abs(atom.charge)}${atom.charge < 0 ? '⁻' : '⁺'}`;
 };
 
 // A crisp white "halo" outline around the atom symbols — four offset shadows
@@ -95,6 +106,7 @@ const HIGHLIGHT_RADIUS = {
   C: 0.34,
   O: 0.46,
   S: 0.54,
+  P: 0.54,
   H: 0.30,
   L: 0.62,   // generous for the "CoA" floating text label
 };
@@ -237,7 +249,7 @@ function AtomNode({ atom, opacity = 1, scale = 1, onHoverGroup }) {
               userSelect: 'none',
             }}
           >
-            {el}
+            {el}{chargeSuffix(atom)}
           </div>
         </Html>
       )}
@@ -313,7 +325,7 @@ function phaseProgress(t, start, end) {
   return easeInOut(p);
 }
 
-function TransitioningMolecule({ prevIndex, nextIndex, onHoverGroup, onDone }) {
+function TransitioningMolecule({ molecules, highlights, prevIndex, nextIndex, onHoverGroup, onDone }) {
   const [progress, setProgress] = useState(prevIndex === nextIndex ? 1 : 0);
   const startTimeRef = useRef(null);
 
@@ -340,7 +352,7 @@ function TransitioningMolecule({ prevIndex, nextIndex, onHoverGroup, onDone }) {
 
   const prev = molecules[prevIndex];
   const next = molecules[nextIndex];
-  const tween = useMemo(() => buildTween(prev, next), [prevIndex, nextIndex]);
+  const tween = useMemo(() => buildTween(prev, next), [prev, next]);
 
   const tRaw = progress;
   const exitT  = phaseProgress(tRaw, 0,                 PHASE_EXIT_END);
@@ -401,8 +413,8 @@ function TransitioningMolecule({ prevIndex, nextIndex, onHoverGroup, onDone }) {
   // During a transition we fade the previous step's highlight out and the
   // next step's highlight in, both gated by the underlying atom's enter/exit
   // visibility so the highlight stays anchored to the molecule.
-  const prevSet = useMemo(() => new Set(HIGHLIGHTS[prevIndex] || []), [prevIndex]);
-  const nextSet = useMemo(() => new Set(HIGHLIGHTS[nextIndex] || []), [nextIndex]);
+  const prevSet = useMemo(() => new Set(highlights[prevIndex] || []), [highlights, prevIndex]);
+  const nextSet = useMemo(() => new Set(highlights[nextIndex] || []), [highlights, nextIndex]);
   const allHighlightKeys = useMemo(
     () => new Set([...prevSet, ...nextSet]),
     [prevSet, nextSet]
@@ -588,10 +600,21 @@ function TransitioningMolecule({ prevIndex, nextIndex, onHoverGroup, onDone }) {
 // ------------------------------------------------------------------
 // Main viewer component — the molecule stays still unless the user drags.
 // ------------------------------------------------------------------
-export default function MoleculeViewer({ prevIndex, stepIndex, onTransitionEnd, onHoverGroup }) {
+// `molecules` / `highlights` / `cameraZ` come from the active pathway. The
+// parent keys this component by pathway id so switching pathways remounts the
+// canvas (fresh camera distance, no cross-pathway tween).
+export default function MoleculeViewer({
+  molecules,
+  highlights,
+  cameraZ = 11,
+  prevIndex,
+  stepIndex,
+  onTransitionEnd,
+  onHoverGroup,
+}) {
   return (
     <Canvas
-      camera={{ position: [0, 0, 11], fov: 38 }}
+      camera={{ position: [0, 0, cameraZ], fov: 38 }}
       dpr={[1, 2]}
       style={{ width: '100%', height: '100%' }}
       gl={{ antialias: true, alpha: true }}
@@ -602,6 +625,8 @@ export default function MoleculeViewer({ prevIndex, stepIndex, onTransitionEnd, 
       <directionalLight position={[-4, -3, 6]} intensity={0.18} color="#e8eef2" />
 
       <TransitioningMolecule
+        molecules={molecules}
+        highlights={highlights}
         prevIndex={prevIndex}
         nextIndex={stepIndex}
         onHoverGroup={onHoverGroup}
@@ -611,7 +636,7 @@ export default function MoleculeViewer({ prevIndex, stepIndex, onTransitionEnd, 
       <OrbitControls
         enablePan={false}
         minDistance={5}
-        maxDistance={20}
+        maxDistance={Math.max(20, cameraZ + 8)}
         enableDamping
         dampingFactor={0.1}
       />

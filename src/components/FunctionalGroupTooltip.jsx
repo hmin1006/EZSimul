@@ -4,7 +4,10 @@ const GROUP_TITLES = {
   carboxyl: 'Carboxyl group (–COOH)',
   hydroxyl: 'Hydroxyl (–OH)',
   ketone: 'Ketone (C=O)',
+  aldehyde: 'Aldehyde (–CHO)',
   thioester: 'Thioester bond (C(=O)–S)',
+  phosphate: 'Phosphate ester (–O–PO₃²⁻)',
+  acylphosphate: 'Acyl phosphate (C(=O)–O–PO₃²⁻)',
   CoA: 'Coenzyme A',
 };
 
